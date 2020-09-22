@@ -1,6 +1,7 @@
 /* Copyright (C) QMETHODS - Business & IT Consulting GmbH - All Rights Reserved
 * Unauthorized copying of this file, via any medium is strictly prohibited
 * Proprietary and confidential
+* author: roman.bauer@qmethods.com
 */
 
 // Require used modules.
@@ -10,35 +11,29 @@ const request = require("request-promise-native");
 const config = {
   "name": "",
   "description": "",
-  "migrateInstance": true,
-  "migrateConfiguration": false,
+  "migrateInstance": false,
+  "migrateConfiguration": true,
   "migrateFrom": {
-    "entity": "<existing-entity>",
-    "serverURL": "https://source-versio.company.com",
-    "apiToken": "<your-api-token>",
-    "environment": "<your-versio-environment>"
+    "entity": "user-datadog",
+    "serverURL": "https://dev-hetzner.versio.io",
+    "apiToken": "5gXTjYBwMXSwtogoyfrctM:0zoo662lf8f2ls6PSqksmD",
+    "environment": "roman2"
   },
   "migrateTo": {
-    "entity": "<new-entity>",
-    "serverURL": "https://target-versio.company.com",
-    "apiToken": "<your-api-token>",
-    "environment": "<your-versio-environment>"
+    "entity": "user-datadog",
+    "serverURL": "https://live.versio.io",
+    "apiToken": "41PwyJiUmw6jJVboaIVpgB:3LAMFsSTX9MFjxdtcnsMvc",
+    "environment": "ingufdiujo"
   }
 }
 
 const apiVersion = "/api-versio.db/1.0/";
 
-let entityUrl
-  , httpMethod = "GET"
-  , headers = {
-    "Authorization": "apiToken " + config.migrateFrom.apiToken
-  };
-
 // Maximum number of results with one request
 const limit = 100;
 
 const main = async () => {
-  
+
   // Migrate instances first
   if (config.migrateInstance === true) {
     await getEntityFromVersio(config);
@@ -58,18 +53,20 @@ function getEntityFromVersio(config) {
 
   // Move instance of given entity to another environment or entity
   // GET instance IDs
-  console.log("GET all instance IDs of the given entity.");
+  console.log("GET all instance IDs of the given entity '" + config.migrateFrom.entity + "'.");
   let offsetIds = 0;
   // With large results, multiple GET requests are required to get all instances
   do {
     let entityUrlIds = config.migrateFrom.serverURL + apiVersion + config.migrateFrom.environment + "/" + config.migrateFrom.entity + "?limit=" + limit + "&offset=" + offsetIds;
 
     let options = {
-      method: httpMethod,
+      method: "GET",
       uri: entityUrlIds,
-      headers
+      headers: {
+        "Authorization": "apiToken " + config.migrateFrom.apiToken
+      }
     };
-  
+
     return (
       request(options)
         .then(async sourceResponse => {
@@ -82,24 +79,26 @@ function getEntityFromVersio(config) {
           let instances = sourceResponseBody.items;
 
           console.log("Found " + instances.length + " instance IDs. ");
-  
+
           await instances.reduce((promiseChain, instance) => {
             return promiseChain.then(async () => {
 
               console.log("     GET change information for every instance. ");
-  
+
               let offsetInstances = 0;
               // GET all changes of one instance
               // With large results, multiple GET requests are required to get all changes
               do {
                 let entityUrlInstances = config.migrateFrom.serverURL + apiVersion + config.migrateFrom.environment + "/" + config.migrateFrom.entity + "/" + instance + "?content=changes&limit=" + limit + "&offset=" + offsetInstances + "&utcStart=0000000000000&utcEnd=9999999999999&sortTime=asc";
-                
+
                 options = {
-                  method: httpMethod,
+                  method: "GET",
                   uri: entityUrlInstances,
-                  headers
+                  headers: {
+                    "Authorization": "apiToken " + config.migrateFrom.apiToken
+                  }
                 };
-    
+
                 return (
                   request(options)
                     .then(async sourceResponse => {
@@ -110,36 +109,38 @@ function getEntityFromVersio(config) {
                         offsetInstances = false;
                       }
                       let changes = changeResponseBody.items.map(item => item);
-    
+
                       console.log("     Import instances with their change information to Versio.io. ");
 
                       await changes.reduce((promiseChain2, change) => {
                         return promiseChain2.then(async () => {
-    
+
                           // Status of instance: created or updated
                           if (change.type !== 2) {
-                            entityUrl = config.migrateTo.serverURL + apiVersion + config.migrateTo.environment + "/" + config.migrateTo.entity + "/" + change.instance + "?utc=" + change.utc;
-                            headers["Content-Type"] = "application/json";
-      
+                            let entityUrl = config.migrateTo.serverURL + apiVersion + config.migrateTo.environment + "/" + config.migrateTo.entity + "/" + change.instance + "?utc=" + change.utc;
+
                             options = {
                               method: "PUT",
                               uri: entityUrl,
-                              headers,
+                              headers: {
+                                "Authorization": "apiToken " + config.migrateTo.apiToken,
+                                "Content-Type": "application/json"
+                              },
                               body: JSON.stringify(change.state)
                             };
-      
+
                             // Import instances to Versio.io
                             return (
                               request(options)
                                 .then(async sourceResponse => {
-                                  console.log("           Import finished. ");
+                                  console.log("           Import of change for instance '" + change.instance + "' at timestamp " + change.utc + " finished. ");
                                 })
                                 .catch(error => {
                                   console.log("           Could not create change in Versio.io. " + error);
                                 })
                             );
-                          
-                          } 
+
+                          }
                           // Status of instance: deleted
                           else {
 
@@ -150,15 +151,15 @@ function getEntityFromVersio(config) {
 
 
                             // entityUrl = config.migrateTo.serverURL + apiVersion + config.migrateTo.environment + "/" + config.migrateTo.entity + "/" + change.instance + "?utc=" + change.utc;
-                            // headers["Content-Type"] = "application/json";
-      
+
                             // options = {
                             //   method: "DELETE",
                             //   uri: entityUrl,
-                            //   headers,
+                            //   "Authorization": "apiToken " + config.migrateFrom.apiToken,
+                            //   "Content-Type": "application/json"
                             //   body: JSON.stringify(change.state)
                             // };
-      
+
                             // return (
                             //   request(options)
                             //     .then(async sourceResponse => {
@@ -170,7 +171,7 @@ function getEntityFromVersio(config) {
                             // );
                           }
                         });
-                      }, Promise.resolve([])).then(() => {});
+                      }, Promise.resolve([])).then(() => { });
                     })
                     .catch(error => {
                       console.log("     Could not get specific instance from Versio.io.  " + error);
@@ -178,91 +179,100 @@ function getEntityFromVersio(config) {
                 );
               } while (offsetInstances)
             });
-          }, Promise.resolve([])).then(() => {});
+          }, Promise.resolve([])).then(() => { });
         })
         .catch(error => {
           console.log("Could not get instances from requested entity from Versio.io. " + error);
         })
-        
+
     );
   } while (offsetIds)
 
 }
 
 function getConfigurationFromVersio(config) {
-    // Import entity configuration to new environment
-    // GET entity configuration of old environment
-    console.log("GET entity configurations of old environment.");
-    const apiVersioManagement = "/api-versio.management/1.0/";
-    let entityUrlConfig = config.migrateFrom.serverURL + apiVersioManagement + "configurationTopics/" + config.migrateFrom.environment + "/configurations/conf-entities";
+  // Import entity configuration to new environment
+  // GET entity configuration of old environment
+  console.log("GET entity configurations of old environment '" + config.migrateFrom.environment + "'.");
+  const apiVersioManagement = "/api-versio.management/1.0/";
+  let entityUrlConfig = config.migrateFrom.serverURL + apiVersioManagement + "configurationTopics/" + config.migrateFrom.environment + "/configurations/conf-entities";
 
-    let options = {
-      method: httpMethod,
-      uri: entityUrlConfig,
-      headers
-    };
+  let options = {
+    method: "GET",
+    uri: entityUrlConfig,
+    headers: {
+      "Authorization": "apiToken " + config.migrateFrom.apiToken,
+    }
+  };
 
-    let relevantConfig;
+  let relevantConfig;
 
-    return (
-      request(options)
-        .then(async sourceResponse => {
-          let oldConfig = JSON.parse(sourceResponse);
-          relevantConfig = oldConfig.configuration[config.migrateFrom.entity];
-          
-          console.log("GET entity configurations of new environment.");
-          // GET entity configuration of new environment
+  return (
+    request(options)
+      .then(async sourceResponse => {
+        let oldConfig = JSON.parse(sourceResponse);
+        relevantConfig = oldConfig.configuration[config.migrateFrom.entity];
 
-          const apiVersioManagement = "/api-versio.management/1.0/";
-          let entityUrlConfig = config.migrateTo.serverURL + apiVersioManagement + "configurationTopics/" + config.migrateTo.environment + "/configurations/conf-entities";
+        console.log("GET entity configurations of new environment '" + config.migrateTo.environment + "'.");
+        // GET entity configuration of new environment
 
-          options = {
-            method: httpMethod,
-            uri: entityUrlConfig,
-            headers
-          };
+        entityUrlConfig = config.migrateTo.serverURL + apiVersioManagement + "configurationTopics/" + config.migrateTo.environment + "/configurations/conf-entities";
 
-          return (
-            request(options)
-              .then(async sourceResponse => {
-                let newConfig = JSON.parse(sourceResponse);
+        options = {
+          method: "GET",
+          uri: entityUrlConfig,
+          headers: {
+            "Authorization": "apiToken " + config.migrateTo.apiToken,
+          },
+          // json:true
+        };
 
-                console.log("     Add entity configuration to new environment's configuration. ");
-                // Add entity configuration to new environment's configuration
-                // Overwrite new Config if entity already exists
-                newConfig.configuration[config.migrateFrom.entity] = relevantConfig; 
+        return (
+          request(options)
+            .then(async sourceResponse => {
+              const parsedBody = JSON.parse(sourceResponse);
+              let newConfig = parsedBody.configuration;
 
-                console.log("     Import updated configuration to Versio.io. ");
-                let date = new Date(newConfig.lastChangeUtc);
-                let dateHeaderString = date.toUTCString();
-                headers["If-Unmodified-Since"] = dateHeaderString;
+              console.log("     Add entity configuration of '" + config.migrateFrom.entity + "'to new environment's configuration. ");
+              // Add entity configuration to new environment's configuration
+              // Overwrite new Config if entity already exists
 
-                options = {
-                  method: httpMethod,
-                  uri: entityUrlConfig,
-                  headers,
-                  body: JSON.stringify(newConfig)
-                };
+              newConfig[config.migrateTo.entity] = relevantConfig;
 
-                return (
-                  request(options)
-                    .then(async sourceResponse => {
-                      console.log("           Import successful. ");
-                    })
-                    .catch(error => {
-                      console.log("           Import into Versio.io failed. " + error);
-                    })
-                );
-              })
-              .catch(error => {
-                console.log("     Import of new environment's configuration failed. " + error);
-              })
-          );
-        })
-        .catch(error => {
-          console.log("     Import of old environment's configuration failed. " + error);
-        })
-    );
+              console.log("     Import updated configuration to Versio.io. ");
+              let date = new Date(parsedBody.lastChangeUtc);
+              let dateHeaderString = date.toUTCString();
+
+              options = {
+                method: "PUT",
+                uri: entityUrlConfig,
+                headers: {
+                  "Authorization": "apiToken " + config.migrateTo.apiToken,
+                  "If-Unmodified-Since": dateHeaderString,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newConfig)
+              };
+
+              return (
+                request(options)
+                  .then(async sourceResponse => {
+                    console.log("           Import into '" + config.migrateTo.entity + "' successful. ");
+                  })
+                  .catch(error => {
+                    console.log("           Import into Versio.io failed. " + error);
+                  })
+              );
+            })
+            .catch(error => {
+              console.log("     Import of new environment's configuration failed. " + error);
+            })
+        );
+      })
+      .catch(error => {
+        console.log("     Import of old environment's configuration failed. " + error);
+      })
+  );
 }
 
 main();
