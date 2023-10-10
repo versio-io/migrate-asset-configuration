@@ -41,7 +41,7 @@ const axiosTo = axios.create({
 
 const main = async () => {
   console.log(
-    `Start migrating entity changes:\n\tENVIRONMENT: ${CONFIG.migrateFrom.environment} -> ${CONFIG.migrateTo.environment}\n\tENTITY: ${CONFIG.migrateFrom.entity} -> ${CONFIG.migrateTo.entity}`
+    `Start migrating entity changes:\n\tSERVER: ${CONFIG.migrateFrom.serverURL} -> ${CONFIG.migrateTo.serverURL}\n\tENVIRONMENT: ${CONFIG.migrateFrom.environment} -> ${CONFIG.migrateTo.environment}\n\tENTITY: ${CONFIG.migrateFrom.entity} -> ${CONFIG.migrateTo.entity}`
   );
 
   let offset = 0;
@@ -122,7 +122,7 @@ const main = async () => {
   } while (totalAvailableItems > offset);
 
   console.log(
-    `Finished migrating entity changes:\n\tENVIRONMENT: ${CONFIG.migrateFrom.environment} -> ${CONFIG.migrateTo.environment}\n\tENTITY: ${CONFIG.migrateFrom.entity} -> ${CONFIG.migrateTo.entity}`
+    `Finished migrating entity changes:\n\tSERVER: ${CONFIG.migrateFrom.serverURL} -> ${CONFIG.migrateTo.serverURL}\n\tENVIRONMENT: ${CONFIG.migrateFrom.environment} -> ${CONFIG.migrateTo.environment}\n\tENTITY: ${CONFIG.migrateFrom.entity} -> ${CONFIG.migrateTo.entity}`
   );
 
   if (errorsOccurred) {
