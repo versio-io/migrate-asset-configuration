@@ -51,7 +51,7 @@ const main = async () => {
 
   do {
     console.log(
-      `Get page ${pageCount} (OFFSET ${offset} | LIMIT ${PAGE_SIZE}).`
+      `\tGet page ${pageCount} (OFFSET ${offset} | LIMIT ${PAGE_SIZE}).`
     );
     const pageResults = await axiosFrom({
       method: "get",
@@ -68,7 +68,7 @@ const main = async () => {
     });
 
     console.log(
-      `\tGot changes ${offset + 1}-${
+      `\t\tGot changes ${offset + 1}-${
         offset + pageResults.data.items.length
       } from ${pageResults.data.totalAvailableItems}.`
     );
@@ -77,7 +77,7 @@ const main = async () => {
     offset = offset + PAGE_SIZE;
     pageCount++;
 
-    console.log(`Saving changes.`);
+    console.log(`\tSaving changes.`);
     const saveResult = await axiosTo({
       method: "put",
       url: `environments/${CONFIG.migrateTo.environment}/instances`,
@@ -104,17 +104,19 @@ const main = async () => {
     });
 
     console.log(
-      `\tSaved ${
+      `\t\tSaved ${
         pageResults.data.items.length
-      } changes with the following states:\n\t${Object.entries(saveStatusCounts)
+      } changes with the following states:\n\t\t\t${Object.entries(
+        saveStatusCounts
+      )
         .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
-        .join("\n\t")}`
+        .join("\n\t\t\t")}`
     );
 
     if (errors.length > 0) {
       errorsOccurred = true;
       console.log(
-        `The following error occurred:\n\t${errors
+        `\t\t\t\tThe following error occurred:\n\t${errors
           .map(({ id, utc, error }) => `Instance '${id}' at ${utc}: ${error}`)
           .join("\n\t")}`
       );
