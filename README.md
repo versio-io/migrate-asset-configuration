@@ -1,16 +1,15 @@
-# README for migrateEntity.js
+# Migrate Versio.io instances
 
 ### Requirements
 A NodeJS installation on your computer is required.  
 The file uses the node modules, which needs to be installed with `npm install`.
 
 ### Description
-MigrateEntity enables Versio.io users to determine an entity whose instances will be migrated to another place in Versio.io.
+The script allows Versio.io users to copy instances in an environment (e.g. to rename the entity) or to migrate between environments.
 
-The instances of a given entity can either be migrated to another environment or a different entity within the same environment.  
-The instance history remains unchanged. In the target environment/entity, the instances will look exactly the same as in the original environment. 
+The instance history remains unchanged. In the target environment, instances look exactly as they did in the original environment. 
 
-Users need to provide data from the original- and target environment.
+Users must have API access to the original and target environments.
 
 ### Required user inputs in `const CONFIG`
 
@@ -18,15 +17,13 @@ Users need to provide data from the original- and target environment.
 
 |Parameter|Description|Advice|
 |---------|-----------|------|
-|migrateInstance|Set true, if the instances of the given entity should be migrated to the target environment/entity||
-|migrateConfiguration|Set true, if the entity configuration should be migrated to the target environment/entity|Overwrites the entity configuration if it already exists in the target environment|
 |**migrateFrom**|||
 |- entity|Already existing entity name||
-|- serverURL|Server URL where the entity exists||
+|- serverURL|Versio.io server URL where the entity exists||
 |- apiToken|API token of the server||
 |- environment|Environment where the entity exists||
 |**migrateTo**|||
 |- entity|Desired entity name in the target environment|If entity name already exists, instances will be added to the existing entity. No Overwriting.|
-|- serverURL|Server URL for the migrated entity||
+|- serverURL| Versio.io server URL for the migrated entity||
 |- apiToken|API token of the server||
 |- environment|Environment of the migrated entity||
