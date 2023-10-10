@@ -2,22 +2,19 @@
 
 ### Requirements
 A NodeJS installation on your computer is required.  
-The file uses the node module `request-promise-native`, which needs to be installed.
+The file uses the node modules, which needs to be installed with `npm install`.
 
 ### Description
-MigrateEntity enables Versio.io users to determine an entity whose instances and configuration will be migrated to another place in Versio.io.
+MigrateEntity enables Versio.io users to determine an entity whose instances will be migrated to another place in Versio.io.
 
 The instances of a given entity can either be migrated to another environment or a different entity within the same environment.  
 The instance history remains unchanged. In the target environment/entity, the instances will look exactly the same as in the original environment. 
 
-The configuration of the entity from the Environment Settings can also be migrated.
-
-The migration of instances and configurations can be enabled seperately.
 Users need to provide data from the original- and target environment.
 
-### Required user inputs in `const config`
+### Required user inputs in `const CONFIG`
 
-`const config` is the only place in the file you need to make changes to
+`const CONFIG` is the only place in the file you need to make changes to
 
 |Parameter|Description|Advice|
 |---------|-----------|------|

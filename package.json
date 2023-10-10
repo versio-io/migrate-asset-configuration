@@ -1,0 +1,23 @@
+{
+  "name": "migrate-asset-configuration",
+  "version": "1.0.0",
+  "description": "A NodeJS installation on your computer is required.",
+  "main": "versioDatabase-migrateEntityInstances.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/versio-io/migrate-asset-configuration.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/versio-io/migrate-asset-configuration/issues"
+  },
+  "homepage": "https://github.com/versio-io/migrate-asset-configuration#readme",
+  "dependencies": {
+    "axios": "^1.5.1"
+  }
+}
